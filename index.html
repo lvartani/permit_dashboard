@@ -132,7 +132,7 @@ var datatable = $('#dc-table-chart');
 var defaultCenter = [42.33830669363005, -71.068143378125];
 var defaultZoom = 11;
 
-d3.json("data/permits.csv", function(error, data) {
+d3.csv("data/permits.csv", function(error, data) {
 
 	var dateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%L");
     var parseDate = d3.time.format('%Y-%m-%dT%H:%M:%S.%L').parse;
