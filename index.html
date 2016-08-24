@@ -37,17 +37,17 @@
 <div class='container' style='font: 12px sans-serif;'>
 	<div class = 'row'>
 		<div class="col-xs-10 dc-data-count" style = 'float:left;'>
-			<h2>Nashville Building Permits Dashboard
+			<h2>Boston Building Permits Dashboard
 			  <span>
 				<span class="filter-count"></span>
-				 selected out of 
+				 selected out of
 				<span class="total-count"></span>
-				 records 
+				 records
 			  </span>
 			</h2>
 		</div>
 	</div>
-	
+
 	<div class = 'row'>
 		<div class='col-xs-9' id='dc-map-chart'>
 		  <h3>
@@ -60,11 +60,11 @@
 					</a>
 				</span>
 		  </h3>
-		</div> 
+		</div>
 
 		<div class='col-xs-3' id = 'dc-row-chart'>
 			<h3>
-			Row Chart - Cities
+			 - Neighborhoods
 				<span>
 					<a class="reset"
 					href="javascript:rowChart.filterAll();dc.redrawAll();"
@@ -75,13 +75,19 @@
 			</h3>
 		</div>
 	</div>
-	
+
 	<div class='row'>
 		<div class='col-xs-12' id='dc-time-chart'>
 		  <h3>Bar Chart - Permits by issuance date</h3>
 		</div>
 	</div>
-	
+
+    <div class='row'>
+		<div class='col-xs-12' id='monthly-volume-chart'>
+		  <h5>Bar Chart - Permits by month</h5>
+		</div>
+	</div>
+
 	<div class='row'>
 		<div class='col-xs-12'>
 			<h3>Data Table</h3>
@@ -89,7 +95,7 @@
 					<thead>
 						<tr class='header'>
 							<th>Issuance Date</th>
-							<th>Contact</th>
+							<th>Applicant</th>
 							<th>City</th>
 							<th>Permit Type</th>
 							<th>Address</th>
@@ -98,7 +104,7 @@
 				</table>
 		</div>
 	</div>
-  
+
 </div>
 </div>
 </div>
@@ -111,46 +117,85 @@
 <script type="text/javascript" src='js/jquery.dataTables.min.js'></script>
 <script type="text/javascript" src='js/bootstrap.min.js'></script>
 <script type="text/javascript" src="js/leaflet.markercluster.js"></script>
+<script type="text/javascript" src="js/underscore-min.js"></script>
 <script type="text/javascript" src="js/dc.leaflet.js"></script>
 <script type="text/javascript">
 
 //connect charts to their appropriate selectors
 var mapChart = dc_leaflet.markerChart("#dc-map-chart");
 var rowChart = dc.rowChart("#dc-row-chart");
-var timeChart = dc.barChart("#dc-time-chart");
+var timeChart = dc.lineChart("#dc-time-chart");
+var volumeChart = dc.barChart('#monthly-volume-chart');
 var dataCount = dc.dataCount(".dc-data-count");
 var datatable = $('#dc-table-chart');
 //initial map view
-var defaultCenter = [42.69,25.42];
-var defaultZoom = 1;
+var defaultCenter = [42.33830669363005, -71.068143378125];
+var defaultZoom = 11;
 
-d3.json("data/nashPermits.json", function(data) {
-	var dateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S");
-    data.forEach( function(d,i) {
-		d.date_e = dateFormat.parse(d.date_entered);
-		d.date_i = dateFormat.parse(d.date_issued);
-		//handle missing values for table variables
-		d.contact = d.contact ? d.contact : "MISSING";
-		d.city = d.city ? d.city : "MISSING";
-		d.permit_type_description = d.permit_type_description ? d.permit_type_description : "MISSING";
-		d.address = d.address ? d.address : "MISSING";	
-		d.purpose = d.purpose ? d.purpose: "MISSING";
-		// parse lat lng-data
-		if (d.mapped_location.latitude!=null && d.mapped_location.latitude!=undefined) {
-			d.geo = d.mapped_location.latitude + "," + d.mapped_location.longitude;
-		} else {
-			d.geo = "40.7141667,-74.0063889" //dummy coordinates, NYC
-		}
-          });
-	
+d3.json("data/permits.csv", function(error, data) {
+
+	var dateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%L");
+    var parseDate = d3.time.format('%Y-%m-%dT%H:%M:%S.%L').parse;
+
+
+    var permitData= data;
+    _.each(permitData, function(d){
+        console.log(permitData);
+
+        d.date_i = parseDate(d.issued_date);
+        //var yearFormat = d3.time.format('%Y');
+        //var monthFormat = d3.time.format('%b');
+
+        //d.year = +yearFormat(d.date_i);
+        //d.month = monthFormat(d.date_i);
+        //console.log(d.month);
+        //console.log(d.year);
+
+            if (d.city == "DORCHESTER" || d.city == "Dorchester/" || d.city == "Dorchester Center") {
+                d.city = "Dorchester";
+                console.log(d.city);
+            }
+            else if (d.city == "Boston/South End" || d.city == "SOUTH BOSTON" || d.city == "South Boston/South Boston" || d.city== "South End" ){
+                d.city = "South End";
+            }
+            else if (d.city =="BOSTON/Waterfront"||d.city=="BOSTON") {
+                d.city ="Boston";
+            }
+            else {
+                d.city;
+            }
+        //d.date_e = parseDate(d.expiration_date);
+        d.comments = d.comments ? d.comments: "MISSING";
+        var loc = d.location;
+        d.neighborhood= d.city ? d.city:"MISSING";
+        d.description = d.description ? d.description: "MISSING";
+        d.address = d.address ? d.address: "MISSING";
+        d.applicant = d.applicant ? d.applicant: "MISSING";
+        d.permit_type = d.permittypedescr ? d.permittypedescr:"MISSING";
+        d.occupancy =  d.occupancytype ? d.occupancytype:"MISSING";
+        d.permit_number = d.permitnumber ? d.permitnumber: "MISSING";
+        d.work_type = d.worktype ? d.worktype: "MISSING";
+        d.zip = d.zip ? d.zip: "MISSING";
+        d.declared_value = d.declared_valuation ? d.declared_valuation: "MISSING";
+
+
+        if (loc!=null && loc!=undefined) {
+    	 		d.geo = d.location.coordinates[1] + "," + d.location.coordinates[0];
+    	 	} else {
+    			d.geo = "42.36012778366176, -71.05998946271973" //dummy coordinates, Boston
+    	 	}
+        //console.log(d.geo);
+        //console.log(d.issue_date);
+    })
+
 	//toplevel crossfilter
-	var xf = crossfilter(data);
-	
+	var xf = crossfilter(permitData);
+
 	//counter
 	var all = xf.groupAll();
 	dataCount.dimension(xf)
 		.group(all);
-	
+
 	//map
 	var facilities = xf.dimension(function(d) { return d.geo; });
 	mapChart.dimension(facilities)
@@ -164,8 +209,8 @@ d3.json("data/nashPermits.json", function(data) {
 	  .brushOn(true)
 	  .cluster(true)
 	  .filterByArea(true);
-	
-	//row chart	
+
+	//row chart
 	var cities = xf.dimension(function(d) { return d.city; });
 	rowChart.height(300)
 	  .width(330)
@@ -176,31 +221,53 @@ d3.json("data/nashPermits.json", function(data) {
 		  return -p.value;
 	  })
 	  .elasticX(true);
-	 
-	//time series bar chart
+
+      //time volume chart
+      var timeMonths = xf.dimension(function(d){return d.date_i; });
+       volumeChart.width(990) /* dc.barChart('#monthly-volume-chart', 'chartGroup'); */
+         .height(40)
+         .margins({top: 0, right: 50, bottom: 20, left: 40})
+         .dimension(timeMonths)
+         .group(timeMonths.group(d3.time.month))
+         .centerBar(true)
+         .gap(1)
+         .x(d3.time.scale().domain([new Date(2010, 0, 1), new Date(2016, 11, 31)]))
+         .round(d3.time.month.round)
+         .alwaysUseRounding(true)
+         .xUnits(d3.time.month);
+
+	//time series line chart
 	var issuanceDates = xf.dimension(function (d) { return d.date_i; });
 	timeChart.width(960)
 		.height(200)
 		.margins({top: 10, right: 10, bottom: 20, left: 40})
 		.dimension(issuanceDates)
-		.group(issuanceDates.group(d3.time.day))
-		.transitionDuration(500)
-		.elasticY(true)
-		.x(d3.time.scale().domain([new Date(2014, 6, 1), new Date(2014, 12, 31)]))
-		.round(d3.time.day.round)
-		.xUnits(d3.time.days)
-		.elasticY(true)
-		.elasticX(true)
-		.xAxis().ticks(5);	
-	
+		.group(issuanceDates.group(d3.time.month))
+		.transitionDuration(1000)
+		// .elasticY(true)
+        .renderArea(true)
+        .mouseZoomable(true)
+		// .x(d3.time.scale().domain([new Date(2010, 6, 1), new Date(2014, 12, 31)]))
+		// .round(d3.time.day.round)
+		// .xUnits(d3.time.days)
+		// .xAxis().ticks(1)
+
+        .rangeChart(volumeChart)
+            .x(d3.time.scale().domain([new Date(2010, 0, 1), new Date(2016, 11, 31)]))
+            .round(d3.time.month.round)
+            .xUnits(d3.time.months)
+            .elasticY(true)
+            .renderHorizontalGridLines(true);
+        // .mouseZoomable(true);
+
 	//table
 	//dimension for table search
-	var tableDimension = xf.dimension(function (d) { return d.contact.toLowerCase() + ' ' +
-													d.city.toLowerCase() + ' ' +
-													d.permit_type_description.toLowerCase() + ' ' +
+	var tableDimension = xf.dimension(function (d) { return d.neighborhood.toLowerCase() + ' ' +
+                                                    d.occupancy.toLowerCase() + ' ' +
+													d.permit_type.toLowerCase() + ' ' +
 													d.address.toLowerCase() + ' ' +
-													d.purpose.toLowerCase();});
-	
+													d.applicant.toLowerCase();});
+
 	//set options and columns
 	var dataTableOptions = {
         "bSort": true,
@@ -213,7 +280,7 @@ d3.json("data/nashPermits.json", function(data) {
 			},
 			{
 				targets: 1,
-				data: function (d) { return d.contact; },
+				data: function (d) { return d.applicant; },
 				defaultContent: ''
 			},
 			{
@@ -223,7 +290,7 @@ d3.json("data/nashPermits.json", function(data) {
 			},
 			{
 				targets: 3,
-				data: function (d) { return d.permit_type_description;},
+				data: function (d) { return d.permit_type;},
 				defaultContent: ''
 			},
 			{
@@ -233,25 +300,25 @@ d3.json("data/nashPermits.json", function(data) {
 			},
 			{
 				targets: 5, //search column
-				data: function (d) {return d.purpose;},
+				data: function (d) {return d.comments;},
 				defaultContent: '',
 				visible: false
 			}
 		]
 	};
-	
+
 	//initialize datatable
 	datatable.dataTable(dataTableOptions);
-	
+
 	//row details
 	function format ( d ) {
-		return '<b>Purpose: </b>' + d.purpose;
+		return '<b> Comments: </b>' + d.comments;
 	}
-	
+
 	datatable.DataTable().on('click', 'tr[role="row"]', function () {
         var tr = $(this);
         var row = datatable.DataTable().row( tr );
- 
+
         if ( row.child.isShown() ) {
             // This row is already open - close it
             row.child.hide();
@@ -263,7 +330,7 @@ d3.json("data/nashPermits.json", function(data) {
             tr.addClass('shown');
         }
     } );
-	
+
 	//custom refresh function, see http://stackoverflow.com/questions/21113513/dcjs-reorder-datatable-by-column/21116676#21116676
 	function RefreshTable() {
             dc.events.trigger(function () {
@@ -273,13 +340,13 @@ d3.json("data/nashPermits.json", function(data) {
                 datatable.fnDraw();
             });
         }
-	
+
 	//call RefreshTable when dc-charts are filtered
 	for (var i = 0; i < dc.chartRegistry.list().length; i++) {
 		var chartI = dc.chartRegistry.list()[i];
 		chartI.on("filtered", RefreshTable);
 	}
-	
+
 	//filter all charts when using the datatables search box
 	 $(":input").on('keyup',function(){
 		text_filter(tableDimension, this.value);//cities is the dimension for the data table
@@ -295,7 +362,7 @@ d3.json("data/nashPermits.json", function(data) {
 		RefreshTable();
 		dc.redrawAll();}
 	});
-	
+
 	//reset map view on clicking the reset button
 	 $("#mapReset").on('click', function() {
 		mapChart.map().setView(defaultCenter, defaultZoom);
