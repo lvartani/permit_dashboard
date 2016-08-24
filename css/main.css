@@ -1,0 +1,32 @@
+body {
+font-family: 'Montserrat', sans-serif !important;
+}
+h4 span {
+  font-size:14px;
+  font-weight:normal;
+  }
+h2 {
+  float: left;
+}
+h2 span {
+  font-size:14px;
+  font-weight:normal;
+  }
+.dc-chart g.row text {
+  fill: black;
+  font-size: 10px;
+}
+label {
+  font: bold 12px sans-serif;
+}
+#logo, h2 {
+    display:inline;
+    font-family: 'Montserrat', sans-serif !important;
+}
+#logo {
+    height:100px;
+    float:left;
+}
+h3 {
+        font-family: 'Montserrat', sans-serif !important;
+}

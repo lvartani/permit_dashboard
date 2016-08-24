@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Map Dashboard</title>
+<title>Permitting Dashboard</title>
 <meta charset="UTF-8">
 <meta content='width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0' name='viewport'>
 <link type="text/css" href="css/leaflet.css" rel="stylesheet"/>
@@ -9,25 +9,11 @@
 <link type="text/css" href="css/dc.css" rel="stylesheet"/>
 <link type="text/css" href="css/bootstrap.min.css" rel="stylesheet">
 <link type="text/css" href="css/jquery.dataTables.min.css" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="css/main.css">
 <style>
-    h4 span {
-      font-size:14px;
-      font-weight:normal;
-      }
-    h2 {
-      float: left;
-    }
-    h2 span {
-      font-size:14px;
-      font-weight:normal;
-      }
-	.dc-chart g.row text {
-	  fill: black;
-	  font-size: 10px;
-	}
-	label {
-	  font: bold 12px sans-serif;
-	}
+
 </style>
 </head>
 <body>
@@ -35,9 +21,11 @@
 <div class='container' id='main-container'>
 <div class='content'>
 <div class='container' style='font: 12px sans-serif;'>
+
 	<div class = 'row'>
 		<div class="col-xs-10 dc-data-count" style = 'float:left;'>
-			<h2>Boston Building Permits Dashboard
+            <img id ="logo" src="images/icons_ISD.svg">
+			<h2>Boston Permitting Dashboard
 			  <span>
 				<span class="filter-count"></span>
 				 selected out of
@@ -47,6 +35,18 @@
 			</h2>
 		</div>
 	</div>
+
+    <div class='row'>
+        <div class='col-xs-12' id='dc-time-chart'>
+          <h3>Bar Chart - Permits by issuance date</h3>
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='col-xs-12' id='monthly-volume-chart'>
+          <h5>Bar Chart - Permits by month</h5>
+        </div>
+    </div>
 
 	<div class = 'row'>
 		<div class='col-xs-9' id='dc-map-chart'>
@@ -76,17 +76,7 @@
 		</div>
 	</div>
 
-	<div class='row'>
-		<div class='col-xs-12' id='dc-time-chart'>
-		  <h3>Bar Chart - Permits by issuance date</h3>
-		</div>
-	</div>
 
-    <div class='row'>
-		<div class='col-xs-12' id='monthly-volume-chart'>
-		  <h5>Bar Chart - Permits by month</h5>
-		</div>
-	</div>
 
 	<div class='row'>
 		<div class='col-xs-12'>
@@ -132,7 +122,7 @@ var datatable = $('#dc-table-chart');
 var defaultCenter = [42.33830669363005, -71.068143378125];
 var defaultZoom = 11;
 
-d3.csv("data/permits.csv", function(error, data) {
+d3.json("https://data.cityofboston.gov/resource/hfgw-p5wb.json?$limit=2000", function(error, data) {
 
 	var dateFormat = d3.time.format("%Y-%m-%dT%H:%M:%S.%L");
     var parseDate = d3.time.format('%Y-%m-%dT%H:%M:%S.%L').parse;
@@ -140,7 +130,7 @@ d3.csv("data/permits.csv", function(error, data) {
 
     var permitData= data;
     _.each(permitData, function(d){
-        console.log(permitData);
+        //console.log(permitData);
 
         d.date_i = parseDate(d.issued_date);
         //var yearFormat = d3.time.format('%Y');
@@ -212,7 +202,7 @@ d3.csv("data/permits.csv", function(error, data) {
 
 	//row chart
 	var cities = xf.dimension(function(d) { return d.city; });
-	rowChart.height(300)
+	rowChart.height(600)
 	  .width(330)
 	  .margins({top: 10, right: 10, bottom: 20, left: 40})
 	  .dimension(cities)
@@ -222,10 +212,11 @@ d3.csv("data/permits.csv", function(error, data) {
 	  })
 	  .elasticX(true);
 
+
       //time volume chart
       var timeMonths = xf.dimension(function(d){return d.date_i; });
        volumeChart.width(990) /* dc.barChart('#monthly-volume-chart', 'chartGroup'); */
-         .height(40)
+         .height(80)
          .margins({top: 0, right: 50, bottom: 20, left: 40})
          .dimension(timeMonths)
          .group(timeMonths.group(d3.time.month))
@@ -234,13 +225,14 @@ d3.csv("data/permits.csv", function(error, data) {
          .x(d3.time.scale().domain([new Date(2010, 0, 1), new Date(2016, 11, 31)]))
          .round(d3.time.month.round)
          .alwaysUseRounding(true)
-         .xUnits(d3.time.month);
+         .xUnits(d3.time.month)
+         .yAxis().ticks(0);
 
 	//time series line chart
 	var issuanceDates = xf.dimension(function (d) { return d.date_i; });
 	timeChart.width(960)
 		.height(200)
-		.margins({top: 10, right: 10, bottom: 20, left: 40})
+		.margins({top: 30, right: 50, bottom: 25, left: 40})
 		.dimension(issuanceDates)
 		.group(issuanceDates.group(d3.time.month))
 		.transitionDuration(1000)
@@ -258,7 +250,8 @@ d3.csv("data/permits.csv", function(error, data) {
             .xUnits(d3.time.months)
             .elasticY(true)
             .renderHorizontalGridLines(true);
-        // .mouseZoomable(true);
+
+
 
 	//table
 	//dimension for table search
